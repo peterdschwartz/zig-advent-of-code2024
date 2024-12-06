@@ -1,4 +1,6 @@
 const std = @import("std");
+const helper = @import("./helper.zig");
+
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const print = std.debug.print;
@@ -128,8 +130,8 @@ pub fn safety_records(allocator: Allocator) !void {
     // AoC day 2
     print("SAFETY RECORDS\n", .{});
     // const filename: []const u8 = "input-files/aoc-test.txt";
-    const filename: []const u8 = "input-files/aoc-safety-records.txt";
-    const buffer = try read_file_to_buffer(filename, allocator);
+    const filename: []const u8 = "input-files/aoc-input2.txt";
+    const buffer = try helper.read_file_to_buffer(filename, allocator);
     defer allocator.free(buffer);
 
     var lines = std.mem.splitAny(u8, buffer, "\n");
@@ -167,15 +169,4 @@ pub fn safety_records(allocator: Allocator) !void {
         }
     }
     print("Number of records : {d}\n", .{sum});
-}
-
-fn read_file_to_buffer(filename: []const u8, allocator: Allocator) ![]u8 {
-    // read file into buffer.
-    const file = try std.fs.cwd().openFile(filename, .{ .mode = .read_only });
-    defer file.close();
-
-    const stat = try file.stat();
-    const buffer = try file.readToEndAlloc(allocator, stat.size);
-
-    return buffer;
 }

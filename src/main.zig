@@ -1,14 +1,12 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
 const std = @import("std");
 const sr = @import("./SafetyRecords.zig");
+const parse = @import("./parse.zig");
+const xw = @import("./crossword.zig");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const print = std.debug.print;
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer {
@@ -36,7 +34,6 @@ pub fn main() !void {
         list2.deinit();
     }
 
-    //var lines = std.mem.splitAny(u8, buffer, "\n");
     var numbers = std.mem.splitAny(u8, buffer, " \n");
     var sum: u32 = 0;
     while (numbers.next()) |n| {
@@ -94,5 +91,9 @@ pub fn main() !void {
 
     std.debug.print("Similarity Score is: {d}\n", .{sim_score});
 
-    try sr.safety_records(allocator);
+    // try sr.safety_records(allocator);
+
+    try parse.parseMultiply();
+    //Day 4
+    try xw.crossword();
 }
