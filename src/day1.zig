@@ -1,18 +1,8 @@
 const std = @import("std");
-
-const sr = @import("./SafetyRecords.zig");
-const parse = @import("./parse.zig");
-const xw = @import("./crossword.zig");
-const orders = @import("./orders.zig");
-const patrol = @import("./patrol.zig");
-const ops = @import("./ops.zig");
-const antenna = @import("./antinodes.zig");
-
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const print = std.debug.print;
 
-const DAY = 8;
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -97,15 +87,4 @@ pub fn main() !void {
     }
 
     std.debug.print("Similarity Score is: {d}\n", .{sim_score});
-
-    switch (DAY) {
-        2 => try sr.safety_records(allocator),
-        3 => try parse.parseMultiply(),
-        4 => try xw.crossword(),
-        5 => try orders.parseOrders(),
-        6 => try patrol.patrolPoints(),
-        7 => try ops.ops(),
-        8 => try antenna.antinodes(),
-        else => unreachable,
-    }
 }

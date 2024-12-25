@@ -79,6 +79,10 @@ const Calibration = struct {
     }
 };
 
+pub fn main() !void {
+    try ops();
+}
+
 pub fn ops() !void {
     const filename = "./input-files/aoc-input7.txt";
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

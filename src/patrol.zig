@@ -230,6 +230,10 @@ fn updateLocation(indx: *usize, bound: usize, mode: IncDec) bool {
     }
 }
 
+pub fn main() !void {
+    try patrolPoints();
+}
+
 pub fn patrolPoints() !void {
     const filename = "./input-files/aoc-test6.txt";
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

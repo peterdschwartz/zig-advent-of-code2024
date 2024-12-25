@@ -126,8 +126,20 @@ const Record = struct {
     }
 };
 
-pub fn safety_records(allocator: Allocator) !void {
+pub fn main() !void {
+    try safety_records();
+}
+
+pub fn safety_records() !void {
     // AoC day 2
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) {
+            @panic("Mem Leak!!");
+        }
+    }
     print("SAFETY RECORDS\n", .{});
     // const filename: []const u8 = "input-files/aoc-test.txt";
     const filename: []const u8 = "input-files/aoc-input2.txt";

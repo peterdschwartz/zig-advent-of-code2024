@@ -139,6 +139,10 @@ const CrossWord = struct {
     }
 };
 
+pub fn main() !void {
+    try crossword();
+}
+
 pub fn crossword() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();

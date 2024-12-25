@@ -97,6 +97,10 @@ const Updates = struct {
     }
 };
 
+pub fn main() !void {
+    try parseOrders();
+}
+
 pub fn parseOrders() !void {
     const filename = "./input-files/aoc-input5.txt";
 

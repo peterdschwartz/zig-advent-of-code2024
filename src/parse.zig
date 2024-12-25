@@ -15,6 +15,9 @@ const Pair = struct {
     b: i32,
 };
 
+pub fn main() !void {
+    try parseMultiply();
+}
 pub fn parseMultiply() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
