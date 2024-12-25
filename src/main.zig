@@ -2,9 +2,15 @@ const std = @import("std");
 const sr = @import("./SafetyRecords.zig");
 const parse = @import("./parse.zig");
 const xw = @import("./crossword.zig");
+const orders = @import("./orders.zig");
+const patrol = @import("./patrol.zig");
+const ops = @import("./ops.zig");
+
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const print = std.debug.print;
+
+const DAY = 5;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -91,9 +97,17 @@ pub fn main() !void {
 
     std.debug.print("Similarity Score is: {d}\n", .{sim_score});
 
-    // try sr.safety_records(allocator);
-
-    try parse.parseMultiply();
+    if (DAY == 2) {
+        try sr.safety_records(allocator);
+    }
+    if (DAY == 3) {
+        try parse.parseMultiply();
+    }
     //Day 4
-    try xw.crossword();
+    if (DAY == 4) {
+        try xw.crossword();
+    }
+    // try orders.parseOrders();
+    try patrol.patrolPoints();
+    try ops.ops();
 }
