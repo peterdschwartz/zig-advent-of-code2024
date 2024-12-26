@@ -180,5 +180,5 @@ pub fn safety_records() !void {
             try record_list.append(record);
         }
     }
-    print("Number of records : {d}\n", .{sum});
+    print("!#ANS Number of Records : {d}\n", .{sum});
 }

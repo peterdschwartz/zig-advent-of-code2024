@@ -80,7 +80,6 @@ const CrossWord = struct {
         // count += try self.search(row, col, depth, Direction.inc, Direction.none);
         count += try self.search(row, col, depth, Direction.inc, Direction.inc);
 
-        std.debug.print("Found {d} words @ {d},{d}\n", .{ count, row, col });
         self.count += count;
         return;
     }
@@ -133,7 +132,6 @@ const CrossWord = struct {
             const val = self.a_list.get(p.*).?;
             if (val > 1) {
                 i += 1;
-                std.debug.print("{d}: {d},{d}: {d}\n", .{ i, p.row + 1, p.col + 1, val });
             }
         }
     }
@@ -155,7 +153,7 @@ pub fn crossword() !void {
     // const arena = std.heap.ArenaAllocator.init(allocator);
     // defer arena.deinit();
 
-    const filename = "./input-files/aoc-input4.txt";
+    const filename = "./input-files/aoc-test4.txt";
 
     const buffer = try help.read_file_to_buffer(filename, allocator);
     defer allocator.free(buffer);
@@ -188,8 +186,8 @@ pub fn crossword() !void {
         xword.a_list.deinit();
     }
 
-    xword.print();
     try xword.find_word();
     xword.checkIntersect();
-    print("{d} #XMAS\n", .{xword.count});
+
+    print("!#ANS : {d}\n", .{xword.count});
 }

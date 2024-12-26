@@ -119,7 +119,8 @@ pub fn build(b: *std.Build) !void {
     // exe.linkLibC();
     b.top_level_steps = .{};
     const exno: ?usize = b.option(usize, "n", "Select exercise");
-    // const rand: ?bool = b.option(bool, "random", "Select random exercise");
+    const rand: ?bool = b.option(bool, "random", "Select random exercise");
+    const compare: bool = b.option(bool, "run", "Run normally") orelse false;
     const work_path = "src";
 
     const header_step = PrintStep.create(b, logo);
@@ -138,7 +139,7 @@ pub fn build(b: *std.Build) !void {
         b.default_step = aoc_step;
         aoc_step.dependOn(&header_step.step);
 
-        const verify_step = Challenge.create(b, ex, work_path, .named);
+        const verify_step = Challenge.create(b, ex, work_path, .named, compare);
         verify_step.step.dependOn(&header_step.step);
 
         aoc_step.dependOn(&verify_step.step);
@@ -146,32 +147,32 @@ pub fn build(b: *std.Build) !void {
         return;
     }
 
-    // if (rand) |_| {
-    //     // Random build mode: verifies one random exercise.
-    //     // like for 'exno' but chooses a random exersise number.
-    //     print("work in progress: check a random exercise\n", .{});
-    //
-    //     var prng = std.Random.DefaultPrng.init(blk: {
-    //         var seed: u64 = undefined;
-    //         try std.posix.getrandom(std.mem.asBytes(&seed));
-    //         break :blk seed;
-    //     });
-    //     const rnd = prng.random();
-    //     const ex = calendar[rnd.intRangeLessThan(usize, 0, calendar.len)];
-    //
-    //     print("random exercise: {s}\n", .{ex.main_file});
-    //
-    //     const aoc_step = b.step(
-    //         "random",
-    //         b.fmt("Check the solution of {s}", .{ex.main_file}),
-    //     );
-    //     b.default_step = aoc_step;
-    //     aoc_step.dependOn(&header_step.step);
-    //     const verify_step = Challenge.create(b, ex, work_path, .random);
-    //     verify_step.step.dependOn(&header_step.step);
-    //     aoc_step.dependOn(&verify_step.step);
-    //     return;
-    // }
+    if (rand) |_| {
+        // Random build mode: verifies one random exercise.
+        // like for 'exno' but chooses a random exersise number.
+        print("work in progress: check a random exercise\n", .{});
+
+        var prng = std.Random.DefaultPrng.init(blk: {
+            var seed: u64 = undefined;
+            try std.posix.getrandom(std.mem.asBytes(&seed));
+            break :blk seed;
+        });
+        const rnd = prng.random();
+        const ex = calendar[rnd.intRangeLessThan(usize, 0, calendar.len)];
+
+        print("random exercise: {s}\n", .{ex.main_file});
+
+        const aoc_step = b.step(
+            "random",
+            b.fmt("Check the solution of {s}", .{ex.main_file}),
+        );
+        b.default_step = aoc_step;
+        aoc_step.dependOn(&header_step.step);
+        const verify_step = Challenge.create(b, ex, work_path, .random, compare);
+        verify_step.step.dependOn(&header_step.step);
+        aoc_step.dependOn(&verify_step.step);
+        return;
+    }
 
     // const target = b.standardTargetOptions(.{});
     // const optimize = b.standardOptimizeOption(.{});
@@ -237,12 +238,14 @@ const Challenge = struct {
     exercise: AoCDay,
     work_path: []const u8,
     mode: Mode,
+    compare: bool,
 
     pub fn create(
         b: *Build,
         exercise: AoCDay,
         work_path: []const u8,
         mode: Mode,
+        compare: bool,
     ) *Challenge {
         const self = b.allocator.create(Challenge) catch @panic("OOM");
         self.* = .{
@@ -255,6 +258,7 @@ const Challenge = struct {
             .exercise = exercise,
             .work_path = work_path,
             .mode = mode,
+            .compare = compare,
         };
         return self;
     }
@@ -298,7 +302,44 @@ const Challenge = struct {
             });
         };
 
-        return self.check_output(result);
+        if (self.compare) {
+            return self.check_output(result);
+        } else {
+            return self.print_output(result);
+        }
+    }
+
+    fn print_output(self: *Challenge, result: Child.RunResult) !void {
+        const b = self.step.owner;
+
+        // Make sure it exited cleanly.
+        switch (result.term) {
+            .Exited => |code| {
+                if (code != 0) {
+                    return self.step.fail("{s} exited with error code {d} (expected {})", .{
+                        self.exercise.main_file, code, 0,
+                    });
+                }
+            },
+            else => {
+                return self.step.fail("{s} terminated unexpectedly", .{
+                    self.exercise.main_file,
+                });
+            },
+        }
+
+        const raw_output = if (self.exercise.check_stdout)
+            result.stdout
+        else
+            result.stderr;
+
+        const output = trimLines(b.allocator, raw_output) catch @panic("OOM");
+
+        var lines = std.mem.splitAny(u8, output, "\n");
+        while (lines.next()) |line| {
+            print("{s}\n", .{line});
+        }
+        return;
     }
 
     fn check_output(self: *Challenge, result: Child.RunResult) !void {
@@ -330,10 +371,45 @@ const Challenge = struct {
         // See https://ziglang.org/documentation/master/#Source-Encoding.
         const output = trimLines(b.allocator, raw_output) catch @panic("OOM");
         const exercise_output = self.exercise.output;
+        var ans: []const u8 = "EMPTY";
         if (!std.mem.eql(u8, exercise_output, "")) {
-            if (!std.mem.eql(u8, output, exercise_output)) {
+            // Hold 10 lines of output for printing
+            const num_lines = std.mem.count(u8, output, "\n");
+            const N = @min(10, num_lines);
+            print("N = {d}, num_lines = {d}\n", .{ N, num_lines });
+
+            var line_list: [][]const u8 = try b.allocator.alloc([]const u8, N);
+            defer b.allocator.free(line_list);
+
+            var lines = std.mem.splitAny(u8, output, "\n");
+            var i: usize = 0;
+            var ln: usize = 0;
+            while (lines.next()) |line| {
+                if (line.len > 0) {
+                    if (std.mem.startsWith(u8, line, "!#ANS")) {
+                        ans = findAnswer(line);
+                        break;
+                    }
+                    if (num_lines - i < N) {
+                        line_list[ln] = line[0..];
+                        ln += 1;
+                    }
+                    i += 1;
+                }
+            }
+
+            if (std.mem.eql(u8, ans, "EMPTY")) {
+                print("ERROR: couldn't find answer!\n", .{});
+                return;
+            }
+            if (!std.mem.eql(u8, ans, exercise_output)) {
                 const red = red_bold_text;
                 const reset = reset_text;
+                print("====== output =======\n", .{});
+                print("ans: {s}\n", .{ans});
+                for (line_list) |line| {
+                    print("{s}\n", .{line});
+                }
 
                 // Override the coloring applied by the printError method.
                 // NOTE: the first red and the last reset are not necessary, they
@@ -345,10 +421,10 @@ const Challenge = struct {
                     \\{s}========= but found: ====================={s}
                     \\{s}
                     \\{s}=========================================={s}
-                , .{ red, reset, exercise_output, red, reset, output, red, reset });
+                , .{ red, reset, exercise_output, red, reset, ans, red, reset });
             }
 
-            print("{s}PASSED:\n{s}{s}\n\n", .{ green_text, output, reset_text });
+            print("{s}PASSED:\n{s}{s}\n\n", .{ green_text, ans, reset_text });
         }
     }
 
@@ -418,6 +494,7 @@ const Challenge = struct {
         const root_path = exe_dir.?.root_dir.path.?;
         const sub_path = exe_dir.?.subPathOrDot();
         const exe_path = b.fmt("{s}{s}{s}{s}{s}", .{ root_path, sep, sub_path, sep, exe_name });
+        print("Exe path {s}\n", .{exe_path});
 
         return exe_path;
     }
@@ -460,23 +537,23 @@ const calendar = [_]AoCDay{
     },
     .{
         .main_file = "crossword.zig",
-        .output = "",
+        .output = "1948",
     },
     .{
         .main_file = "orders.zig",
-        .output = "",
+        .output = "4719",
     },
     .{
         .main_file = "patrol.zig",
-        .output = "",
+        .output = "1705",
     },
     .{
         .main_file = "ops.zig",
-        .output = "",
+        .output = "1026766857276279",
     },
     .{
         .main_file = "antinodes.zig",
-        .output = "",
+        .output = "?",
     },
 };
 
@@ -498,4 +575,10 @@ pub fn trimLines(allocator: std.mem.Allocator, buf: []const u8) ![]const u8 {
     // Remove the trailing LF character, that is always present in the exercise
     // output.
     return std.mem.trimRight(u8, result, "\n");
+}
+
+fn findAnswer(line: []const u8) []const u8 {
+    const idx = std.mem.indexOfScalar(u8, line, ':').?;
+    const ans: []const u8 = line[idx + 1 ..];
+    return std.mem.trim(u8, ans, " ");
 }

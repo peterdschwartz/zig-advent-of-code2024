@@ -74,8 +74,6 @@ const Grid = struct {
             gop0.value_ptr.* = false;
         }
 
-        std.debug.print("Patrol Start @ {d},{d}\n", .{ self.guard_loc.x, self.guard_loc.y });
-
         while (!self.offgrid) {
             loc = self.guard_loc.x * self.Ncol + self.guard_loc.y;
             next_loc = self.checkOffGrid(loc);
@@ -325,7 +323,7 @@ fn print_path(path_map: std.AutoHashMap(Point, bool)) void {
             num_loops += 1;
         }
     }
-    std.debug.print("Number of Possible Loops: {d}\n", .{num_loops});
+    std.debug.print("!#ANS Potential Loops: {d}\n", .{num_loops});
 }
 
 fn findLoops(
@@ -345,6 +343,7 @@ fn findLoops(
         if (loop) {
             const value = path_map.*.getPtr(pt.*).?;
             value.* = true;
+            try layout.*.printGrid();
         }
         temp_map.clearRetainingCapacity();
     }

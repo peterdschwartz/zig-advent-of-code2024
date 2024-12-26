@@ -43,9 +43,6 @@ const Updates = struct {
             first_order.* ^= last_order.*;
             last_order.* ^= first_order.*;
             first_order.* ^= last_order.*;
-            if (self.num_swaps > 10) {
-                std.debug.print("Failing {s}|{s}\n", .{ order.first, order.last });
-            }
         }
         return valid;
     }
@@ -57,10 +54,10 @@ const Updates = struct {
                 if (!self.valid) {
                     break;
                 }
-                if (self.num_swaps > 100) {
-                    try self.print_update();
-                    @panic("too many swaps");
-                }
+                // if (self.num_swaps > 100) {
+                //     try self.print_update();
+                //     @panic("too many swaps");
+                // }
             }
         }
     }
@@ -180,12 +177,11 @@ pub fn parseOrders() !void {
             try update.fixOrder();
             const mid_pg = update.findMid();
             sum_fixed += mid_pg.?;
-            try update.print_update();
-            print("mid:{d}, num_swaps: {d}\n", .{ mid_pg.?, update.num_swaps });
+            //print("mid:{d}, num_swaps: {d}\n", .{ mid_pg.?, update.num_swaps });
         }
     }
 
-    print("sum Normal/Fixed: {d}, {d}\n", .{ sum, sum_fixed });
+    print("!#ANS sum Normal/Fixed: {d}, {d}\n", .{ sum, sum_fixed });
 
     cleanUp(&update_list);
 }

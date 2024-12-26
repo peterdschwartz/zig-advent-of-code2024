@@ -37,7 +37,7 @@ pub fn parseMultiply() !void {
         }
     }
 
-    print("Sum: {d}\n", .{sum});
+    print("!#ANS Sum : {d}\n", .{sum});
 }
 
 fn parseToken(token: []const u8) !Pair {
